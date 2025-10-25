@@ -1,28 +1,42 @@
-﻿
+﻿using AutoMapper;
 using System.Text.RegularExpressions;
 using TiacApp.Application.DTOs;
+using TiacApp.Models;
+using TiacApp.Repository;
 
 namespace TiacApp.Application.Service
 {
     public class PersonService : Interface.IPersoneService
     {
+        private PersonRepository _personRepository;
+        private IMapper _mapper;
 
-        public PersonService() { }
-        public Task<object> AddPerson(object newPerson)
+        public PersonService(PersonRepository personRepository, IMapper mapper) 
         {
-            var person = newPerson as PersoneInputDTO;
-
-            return Task.FromResult((object)GetOutputData(person));
+            _personRepository = personRepository;
+            _mapper = mapper;
         }
 
-        private PersoneOutputDTO GetOutputData(PersoneInputDTO personeInputDTO)
+        public async Task<object> AddPerson(object newPerson)
+        {
+            Person person = _mapper.Map<Person>(newPerson);
+            if (person != null) {
+                SocialMedia socialMedias = new SocialMedia();
+                Person addedPerson = await _personRepository.AddPersonAsync(person);
+                return GetOutputData(addedPerson);
+            }
+
+            return null;
+        }
+
+        private PersoneOutputDTO GetOutputData(Person person)
         {
             PersoneOutputDTO output = new PersoneOutputDTO();
-            output.FullName = $"{personeInputDTO.FirstName} {personeInputDTO.LastName}";
+            output.FullName = $"{person.FirstName} {person.LastName}";
             output.NumberOfVowels = GetNumberOfVowels(output.FullName);
             output.NumberOfConsonants = GetNumberOfConsonants(output.FullName);
             output.ReversedName = ReverseName(output.FullName);
-            output.JsonData = personeInputDTO;
+            output.JsonData = person;
 
             return output;
         }
