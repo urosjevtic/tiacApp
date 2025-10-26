@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TiacApp.Infrastructure;
 using TiacApp.Models;
+using TiacApp.Repository.Interface;
 
 namespace TiacApp.Repository
 {
-    public class PersonRepository
+    public class PersonRepository : IPersonRepository
     {
         private AppDbContext _context;
 

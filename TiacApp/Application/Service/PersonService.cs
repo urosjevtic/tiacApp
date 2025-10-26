@@ -3,15 +3,16 @@ using System.Text.RegularExpressions;
 using TiacApp.Application.DTOs;
 using TiacApp.Models;
 using TiacApp.Repository;
+using TiacApp.Repository.Interface;
 
 namespace TiacApp.Application.Service
 {
     public class PersonService : Interface.IPersoneService
     {
-        private PersonRepository _personRepository;
+        private IPersonRepository _personRepository;
         private IMapper _mapper;
 
-        public PersonService(PersonRepository personRepository, IMapper mapper) 
+        public PersonService(IPersonRepository personRepository, IMapper mapper) 
         {
             _personRepository = personRepository;
             _mapper = mapper;
