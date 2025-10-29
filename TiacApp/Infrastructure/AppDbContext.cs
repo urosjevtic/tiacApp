@@ -8,7 +8,6 @@ namespace TiacApp.Infrastructure
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        public DbSet<Person> Persons { get; set; }
-        public DbSet<SocialMedia> SocialMedias { get; set; }
+        public DbSet<Person> Person { get; set; }
     }
 }

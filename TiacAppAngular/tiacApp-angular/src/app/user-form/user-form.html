@@ -1,7 +1,7 @@
 <div class="form-container">
 
-  <!-- Show form only if no user created -->
-  <div *ngIf="!createdUserData">
+  <!-- FORM VIEW -->
+  <div *ngIf="currentView === 'form'">
     <h2>User Information</h2>
     <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
 
@@ -41,12 +41,15 @@
         <button type="button" (click)="addSocialMedia()">+ Add Social Media</button>
       </div>
 
-      <button type="submit" [disabled]="!userForm.valid">Submit</button>
+      <div class="buttons">
+        <button type="submit" [disabled]="!userForm.valid">Submit</button>
+        <button type="button" (click)="showAllUsers()">Show All</button>
+      </div>
     </form>
   </div>
 
-  <!-- Show created user data -->
-  <div *ngIf="createdUserData">
+  <!-- CREATED USER VIEW -->
+  <div *ngIf="currentView === 'created'">
     <h2>Created User Info</h2>
     <p><strong>Full Name:</strong> {{ createdUserData.fullName }}</p>
     <p><strong>Reversed Name:</strong> {{ createdUserData.reversedName }}</p>
@@ -56,7 +59,45 @@
     <h3>JSON Data:</h3>
     <pre>{{ createdUserData.jsonData | json }}</pre>
 
-    <button (click)="addNewUser()">Add New User</button>
+    <div class="buttons">
+      <button (click)="addNewUser()">Add New User</button>
+      <button (click)="showAllUsers()">Show All</button>
+    </div>
   </div>
+
+  <!-- ALL USERS VIEW -->
+  <!-- ALL USERS VIEW -->
+<div *ngIf="currentView === 'all'">
+  <h2>All Users</h2>
+  <div *ngIf="allUsers.length > 0; else noUsers">
+    <div *ngFor="let user of allUsers" class="user-card">
+      <p><strong>Full Name:</strong> {{ user.fullName }}</p>
+      <p><strong>Reversed Name:</strong> {{ user.reversedName }}</p>
+      <p><strong>Vowels:</strong> {{ user.numberOfVowels }}, <strong>Consonants:</strong> {{ user.numberOfConsonants }}</p>
+
+      <div *ngIf="user.jsonData">
+        <p><strong>First Name:</strong> {{ user.jsonData.firstName }}</p>
+        <p><strong>Last Name:</strong> {{ user.jsonData.lastName }}</p>
+        <p><strong>Skills:</strong> {{ user.jsonData.socialSkills.join(', ') }}</p>
+
+        <div *ngIf="user.jsonData.socialMedias?.length">
+          <p><strong>Social Media:</strong></p>
+          <ul>
+            <li *ngFor="let sm of user.jsonData.socialMedias">
+              {{ sm.platform }}: {{ sm.username }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noUsers>
+    <p>No users found.</p>
+  </ng-template>
+
+  <button (click)="backToForm()">Add New</button>
+</div>
+
 
 </div>

@@ -14,21 +14,25 @@ namespace TiacApp.Repository
             _context = context;
         }
 
-        public async Task<Models.Person> AddPersonAsync(Person person)
+        public async Task<Person> AddPersonAsync(Person person)
         {
-            _context.Persons.Add(person);
+            _context.Person.Add(person);
             await _context.SaveChangesAsync();
             return person;
         }
 
-        public async Task<List<Models.Person>> GetAllPersonsAsync()
+        public async Task<List<Person>> GetAllPersonsAsync()
         {
-            return await _context.Persons.ToListAsync();
+            return await _context.Person
+                .Include(p => p.SocialMedias)
+                .ToListAsync();
         }
 
-        public async Task<Models.Person?> GetPersonByIdAsync(int id)
+        public async Task<Person?> GetPersonByIdAsync(int id)
         {
-            return await _context.Persons.FindAsync(id);
+            return await _context.Person
+                .Include(p => p.SocialMedias)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
     }
 }

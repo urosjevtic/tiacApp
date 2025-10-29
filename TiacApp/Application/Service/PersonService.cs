@@ -4,15 +4,21 @@ using TiacApp.Application.DTOs;
 using TiacApp.Models;
 using TiacApp.Repository;
 using TiacApp.Repository.Interface;
+using Microsoft.Extensions.Logging;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using TiacApp.Application.Exceptions;
 
 namespace TiacApp.Application.Service
 {
     public class PersonService : Interface.IPersoneService
     {
-        private IPersonRepository _personRepository;
-        private IMapper _mapper;
+        private readonly IPersonRepository _personRepository;
+        private readonly IMapper _mapper;
 
-        public PersonService(IPersonRepository personRepository, IMapper mapper) 
+        public PersonService(
+            IPersonRepository personRepository, 
+            IMapper mapper) 
         {
             _personRepository = personRepository;
             _mapper = mapper;
@@ -20,26 +26,102 @@ namespace TiacApp.Application.Service
 
         public async Task<object> AddPerson(object newPerson)
         {
-            Person person = _mapper.Map<Person>(newPerson);
-            if (person != null) {
-                SocialMedia socialMedias = new SocialMedia();
-                Person addedPerson = await _personRepository.AddPersonAsync(person);
-                return GetOutputData(addedPerson);
+            try
+            {
+                if (newPerson == null)
+                {
+                    throw new ValidationException("Person data can't be null");
+                }
+
+                if (newPerson is PersoneInputDTO inputDto)
+                {
+                    ValidatePersonInput(inputDto);
+                }
+                else
+                {
+                    throw new ValidationException("Invalid input type");
+                }
+
+                Person person = _mapper.Map<Person>(newPerson);
+
+                return GetOutputData(await _personRepository.AddPersonAsync(person));
+            }
+            catch (ValidationException ex)
+            {
+                throw;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception("Failed to save person to database", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An unexpected error occurred while processing the request", ex);
+            }
+        }
+
+        private void ValidatePersonInput(PersoneInputDTO input)
+        {
+            if (string.IsNullOrWhiteSpace(input.FirstName))
+            {
+                throw new ValidationException("First name is required");
             }
 
-            return null;
+            if (string.IsNullOrWhiteSpace(input.LastName))
+            {
+                throw new ValidationException("Last name is required");
+            }
+
+            var namePattern = new Regex(@"^[\p{L}\s]+$");
+
+            if (!namePattern.IsMatch(input.FirstName))
+            {
+                throw new ValidationException("First name can only contain letters");
+            }
+
+            if (!namePattern.IsMatch(input.LastName))
+            {
+                throw new ValidationException("Last name can only contain letters");
+            }
+
+            if (input.SocialMedias != null)
+            {
+                foreach (var socialMedia in input.SocialMedias)
+                {
+                    if (string.IsNullOrWhiteSpace(socialMedia.Platform))
+                    {
+                        throw new ValidationException("Social media platform is required");
+                    }
+                    if (string.IsNullOrWhiteSpace(socialMedia.Username))
+                    {
+                        throw new ValidationException("Social media username is required");
+                    }
+                }
+            }
         }
 
         private PersoneOutputDTO GetOutputData(Person person)
         {
-            PersoneOutputDTO output = new PersoneOutputDTO();
-            output.FullName = $"{person.FirstName} {person.LastName}";
-            output.NumberOfVowels = GetNumberOfVowels(output.FullName);
-            output.NumberOfConsonants = GetNumberOfConsonants(output.FullName);
-            output.ReversedName = ReverseName(output.FullName);
-            output.JsonData = person;
+            if (person == null)
+            {
+                throw new ArgumentNullException(nameof(person));
+            }
 
-            return output;
+            try
+            {
+                PersoneOutputDTO output = new PersoneOutputDTO();
+                output.FullName = $"{person.FirstName} {person.LastName}";
+                output.NumberOfVowels = GetNumberOfVowels(output.FullName);
+                output.NumberOfConsonants = GetNumberOfConsonants(output.FullName);
+                output.ReversedName = ReverseName(output.FullName);
+                output.JsonData = person;
+
+                return output;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error processing person data", ex);
+            }
         }
 
         private static int GetNumberOfVowels(string fullName)
@@ -59,31 +141,35 @@ namespace TiacApp.Application.Service
             return new string(nameArray);
         }
 
-        public Task<object> GetPersons()
+        public async Task<object> GetPeople()
         {
-            var person = new Models.Person
+            try
             {
-                Id = 1,
-                FirstName = "John",
-                LastName = "Doe",
-                SocialSkills = new List<string> { "Communication", "Teamwork" },
-                SocialMedias = new List<Models.SocialMedia>
-                {
-                    new()
-                    {
-                        Id = 1,
-                        Platform = "Twitter",
-                        Username = "@johndoe"
-                    }
-                }
-            };
+                var people = await _personRepository.GetAllPersonsAsync();
+                var result = people.Select(person => GetOutputData(person));
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An unexpected error occurred while processing the request", ex);
+            }
 
-            return Task.FromResult((object)person);
         }
 
-        public Task<object> GetPersonById(int id)
+        public async Task<object> GetPersonById(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var person = await _personRepository.GetPersonByIdAsync(id);
+                if (person == null)
+                    return null;
+                return GetOutputData(person);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An unexpected error occurred while processing the request", ex);
+            }
+
         }
     }
 }

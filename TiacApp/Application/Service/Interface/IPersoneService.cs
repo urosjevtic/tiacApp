@@ -2,7 +2,7 @@
 {
     public interface IPersoneService
     {
-        Task<object> GetPersons();
+        Task<object> GetPeople();
         Task<object> GetPersonById(int id);
         Task<object> AddPerson(object persone);
     }

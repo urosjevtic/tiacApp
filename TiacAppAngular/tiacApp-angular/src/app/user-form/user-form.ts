@@ -13,8 +13,10 @@ export class UserForm {
   userForm: FormGroup;
   socialNetworks = ['Facebook', 'Twitter', 'Instagram', 'LinkedIn', 'GitHub'];
 
-  // Store response from backend
   createdUserData: any = null;
+  allUsers: any[] = [];
+
+  currentView: 'form' | 'created' | 'all' = 'form'; // track UI state
 
   constructor(private fb: FormBuilder, private userService: UserService) {
     this.userForm = this.fb.group({
@@ -60,7 +62,8 @@ export class UserForm {
       this.userService.createUser(this.userForm.value).subscribe({
         next: (response) => {
           console.log('User saved:', response);
-          this.createdUserData = response; // store returned data
+          this.createdUserData = response;
+          this.currentView = 'created';
         },
         error: (err) => {
           console.error('Error saving user:', err);
@@ -70,12 +73,33 @@ export class UserForm {
     }
   }
 
-  // --- Reset for new user ---
+  // --- Reset form ---
   addNewUser() {
     this.userForm.reset();
     this.socialSkills.clear();
     this.socialMedias.clear();
     this.createdUserData = null;
+    this.currentView = 'form';
+  }
+
+  // --- Show all users ---
+  showAllUsers() {
+    this.userService.getAllUsers().subscribe({
+      next: (users) => {
+        console.log('All users:', users);
+        this.allUsers = users;
+        this.currentView = 'all';
+      },
+      error: (err) => {
+        console.error('Error fetching users:', err);
+        alert('Failed to load users.');
+      }
+    });
+  }
+
+  // --- Back to form from all users ---
+  backToForm() {
+    this.currentView = 'form';
   }
 
 }
